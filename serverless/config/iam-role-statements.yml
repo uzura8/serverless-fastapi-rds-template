@@ -1,0 +1,47 @@
+- Effect: Allow
+  Action:
+    - logs:CreateLogGroup
+    - logs:CreateLogStream
+    - logs:PutLogEvents
+  Resource:
+    - "*"
+#- Effect: Allow
+#  Action:
+#    - dynamodb:DescribeTable
+#    - dynamodb:Query
+#    - dynamodb:Scan
+#    - dynamodb:GetItem
+#    - dynamodb:BatchGetItem
+#    - dynamodb:BatchWriteItem
+#    - dynamodb:PutItem
+#    - dynamodb:UpdateItem
+#    - dynamodb:DeleteItem
+#    # For DynamoDB Stream
+#    - dynamodb:DescribeStream
+#    - dynamodb:GetRecords
+#    - dynamodb:GetShardIterator
+#    - dynamodb:ListStreams
+#  Resource: arn:aws:dynamodb:*:*:table/*
+#- Effect: 'Allow'
+#  Action:
+#    - 'dynamodb:*'
+#  Resource: arn:aws:dynamodb:*:*:table/*
+#- Effect: Allow
+#  Action:
+#    - s3:ListBucket
+#  Resource: arn:aws:s3:::${self:custom.mediaS3BucketName}
+#- Effect: Allow
+#  Action:
+#    - s3:GetObject
+#    - s3:PutObject
+#    - s3:DeleteObject
+#  Resource: arn:aws:s3:::${self:custom.mediaS3BucketName}/*
+#- Effect: Allow
+#  Action:
+#    - cloudfront:CreateInvalidation
+#  Resource: arn:aws:cloudfront::${self:custom.awsAccountId}:distribution/${self:custom.mediaDistributionId}
+#- Effect: Allow
+#  Action:
+#    - ses:SendEmail
+#    - ses:SendRawEmail
+#  Resource: "*"

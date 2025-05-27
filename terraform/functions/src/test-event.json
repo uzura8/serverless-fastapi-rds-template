@@ -1,0 +1,22 @@
+{
+  "Records": [
+    {
+      "cf": {
+        "request": {
+          "uri": "/chats/internal-docs/page.html",
+          "headers": {
+            "x-forwarded-for": [
+              {
+                "key": "X-Forwarded-For",
+                "value": "152.165.126.155, 61.211.160.230"
+              }
+            ],
+            "authorization": [
+              { "key": "Authorization", "value": "Basic dXNlcjpwYXNz" }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

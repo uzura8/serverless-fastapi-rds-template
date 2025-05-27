@@ -1,0 +1,284 @@
+#!/bin/bash
+
+ADMIN_USER=ec2-user
+NODE_VER=22.14.0
+PYTHON_VER=3.13.3
+
+#SERVICE_DOMAIN=example.com
+GIT_USER_NAME="user-name"
+GIT_USER_EMAIL="user-name@example.com"
+
+### locale setting  ###
+sudo timedatectl set-timezone Asia/Tokyo
+sudo localectl set-locale LANG=ja_JP.UTF-8
+
+### Setting yum update ###
+sudo yum -y update
+sudo yum -y install yum-cron
+sudo cp /etc/yum/yum-cron.conf /etc/yum/yum-cron.conf.ori
+sudo sed -e "s|^apply_updates = no|apply_updates = yes|" /etc/yum/yum-cron.conf > /tmp/yum-cron.conf.$$
+sudo mv /tmp/yum-cron.conf.$$ /etc/yum/yum-cron.conf
+sudo systemctl start yum-cron
+sudo systemctl enable yum-cron
+sudo yum -y groupinstall base "Development tools"
+
+### install etckeeper ###
+sudo yum --enablerepo=epel -y install etckeeper
+sudo touch /etc/.gitignore
+sudo echo "shadow*" >> /etc/.gitignore
+sudo echo "gshadow*" >> /etc/.gitignore
+sudo echo "passwd*" >> /etc/.gitignore
+sudo echo "group*" >> /etc/.gitignore
+sudo git config --global user.email "${GIT_USER_EMAIL}"
+sudo git config --global user.name "${GIT_USER_NAME}"
+sudo etckeeper init
+sudo etckeeper commit "First Commit"
+
+##### install postfix
+#sudo yum -y install postfix
+#sudo cp /etc/postfix/main.cf /etc/postfix/main.cf.ori
+#sudo cat >> /etc/postfix/main.cf <<EOF
+#
+##smtp_tls_security_level = may # For postfix v2.3
+#smtpd_tls_received_header = yes
+#smtp_use_tls = yes
+#
+#EOF
+#sudo systemctl start postfix
+#sudo systemctl enable postfix
+
+### install others ###
+sudo yum install -y nkf --enablerepo=epel
+sudo setenforce 0
+sudo systemctl stop firewalld.service
+sudo systemctl mask firewalld.service
+sudo yum -y install rsyslog
+sudo systemctl start rsyslog
+sudo systemctl enable rsyslog
+sudo yum -y install sysstat
+sudo yum -y install screen
+sudo dnf -y install vim
+sudo dnf -y install git
+sudo dnf -y install rsync
+
+# Enabled cron on AmazonLinux2023 env
+sudo systemctl start crond
+sudo systemctl enable crond
+
+### user setting ###
+#### bash setting
+cat >> /home/${ADMIN_USER}/.bash_profile <<EOF
+export PS1="[\u@\h \W]\\$ "
+export EDITOR=vim
+alias V='vim -R -'
+EOF
+source /home/${ADMIN_USER}/.bash_profile
+
+#### screen setting
+cat > /home/${ADMIN_USER}/.screenrc <<EOF
+escape ^Jj
+hardstatus alwayslastline "[%02c] %-w%{=b bw}%n %t%{-}%+w"
+startup_message off
+vbell off
+autodetach on
+defscrollback 10000
+termcapinfo xterm* ti@:te@
+EOF
+chown ${ADMIN_USER}. /home/${ADMIN_USER}/.screenrc
+
+#### vim setting
+cat > /home/${ADMIN_USER}/.vimrc <<EOF
+syntax on
+"set number
+set enc=utf-8
+set fenc=utf-8
+set fencs=iso-2022-jp,euc-jp,cp932
+set backspace=2
+set noswapfile
+"set shiftwidth=4
+"set tabstop=4
+set shiftwidth=2
+set tabstop=2
+"set expandtab
+set hlsearch
+set backspace=indent,eol,start
+"" for us-keybord
+"nnoremap ; :
+"nnoremap : ;
+"" Remove comment out as you like
+"hi Comment ctermfg=DarkGray
+EOF
+#chown ${ADMIN_USER}. /home/${ADMIN_USER}/.vimrc
+sudo ln -s /home/${ADMIN_USER}/.vimrc /root/
+
+#### git setting
+cat > /home/${ADMIN_USER}/.gitconfig <<EOF
+[color]
+  diff = auto
+  status = auto
+  branch = auto
+  interactive = auto
+[alias]
+  co = checkout
+  st = status
+  ci = commit -v
+  di = diff
+  di-file = diff --name-only
+  up = pull --rebase
+  br = branch
+  ll  = log --graph --pretty=full --stat
+  l  = log --oneline
+EOF
+echo "[user]" >> /home/${ADMIN_USER}/.gitconfig
+echo "  email = ${GIT_USER_EMAIL}" >> /home/${ADMIN_USER}/.gitconfig
+echo "  name = ${GIT_USER_NAME}" >> /home/${ADMIN_USER}/.gitconfig
+chown ${ADMIN_USER}. /home/${ADMIN_USER}/.gitconfig
+sudo ln -s /home/${ADMIN_USER}/.gitconfig /root/
+
+##### Install MySQL ###
+sudo dnf -y localinstall https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
+sudo rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023
+sudo dnf -y install mysql mysql-community-client
+
+### Install Apache ###
+sudo yum install -y httpd httpd-devel zlib-devel
+
+#### Add webadmin group
+#sudo echo "umask 002" > /etc/sysconfig/httpd
+sudo groupadd webadmin
+sudo gpasswd -a ${ADMIN_USER} webadmin
+sudo gpasswd -a apache webadmin
+
+#### Create Web directries
+sudo rm -f /etc/httpd/conf.d/welcome.conf
+sudo rm -f /var/www/error/noindex.html
+sudo rm -f /var/www/error/noindex.html
+sudo mkdir -p /var/www/sites
+sudo chown ${ADMIN_USER} /var/www/sites /var/www/html
+sudo chgrp -R webadmin /var/www/sites /var/www/html
+sudo chmod -R 775 /var/www/sites /var/www/html
+sudo chmod -R g+s /var/www/sites /var/www/html
+
+#### Apache setting
+sudo cp /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.ori
+sudo sed -e "s/^\(AddDefaultCharset UTF-8\)/#\1/g" /etc/httpd/conf/httpd.conf > /tmp/httpd.conf.$$
+sudo sed -e "s/^\(\s\+\)\(CustomLog .\+\)$/\1\#\2/" /tmp/httpd.conf.$$ > /tmp/httpd.conf.2.$$
+
+sudo cat >> /tmp/httpd.conf.2.$$ <<EOF
+ServerSignature Off
+ServerTokens Prod
+LogFormat "%V %h %l %u %t \"%r\" %>s %b %D \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%V %h %l %u %t \"%!414r\" %>s %b %D" common
+LogFormat "%{Referer}i -> %U" referer
+LogFormat "%{User-agent}i" agent
+# No log from worm access
+SetEnvIf Request_URI "default\.ida" no_log
+SetEnvIf Request_URI "cmd\.exe" no_log
+SetEnvIf Request_URI "root\.exe" no_log
+SetEnvIf Request_URI "Admin\.dll" no_log
+SetEnvIf Request_URI "NULL\.IDA" no_log
+# No log from intarnal access
+SetEnvIf Remote_Addr 127.0.0.1 no_log
+# Log other access
+CustomLog logs/access_log combined env=!no_log
+<DirectoryMatch ~ "/\.(svn|git)/">
+  Require all denied
+</DirectoryMatch>
+<Files ~ "^\.git">
+  Require all denied
+</Files>
+
+EOF
+
+sudo mv /tmp/httpd.conf.2.$$ /etc/httpd/conf/httpd.conf
+sudo rm -f /tmp/httpd.conf.$$
+sudo rm -f /tmp/httpd.conf.2.$$
+
+sudo cat > /etc/httpd/conf.d/virtualhost.conf <<EOF
+<VirtualHost *:80>
+  ServerName localhost
+  VirtualDocumentRoot /var/www/sites/%0/public
+</VirtualHost>
+<Directory "/var/www/sites">
+  AllowOverride All
+</Directory>
+
+EOF
+
+sudo sed -e "s/^\(\s\+\)\(missingok\)/\1daily\n\1dateext\n\1rotate 16\n\1\2/" /etc/logrotate.d/httpd > /tmp/logrotate.d.httpd.$$
+sudo mv /tmp/logrotate.d.httpd.$$ /etc/logrotate.d/httpd
+sudo systemctl start httpd
+sudo systemctl enable httpd
+
+### Install Node.js ###
+sudo yum -y install gcc-c++
+mkdir ~/src
+cd ~/src
+git clone https://github.com/creationix/nvm.git ~/.nvm
+source ~/.nvm/nvm.sh
+cat >> /home/${ADMIN_USER}/.bash_profile <<EOF
+# nvm
+if [[ -s ~/.nvm/nvm.sh ]] ; then
+  source ~/.nvm/nvm.sh ;
+fi
+EOF
+source /home/${ADMIN_USER}/.bash_profile
+nvm install ${NODE_VER}
+nvm use ${NODE_VER}
+nvm alias default ${NODE_VER}
+
+## Install python
+sudo yum install -y gcc gcc-c++ make git openssl-devel bzip2-devel readline-devel zlib-devel sqlite-devel
+curl https://pyenv.run | bash
+cat >> /home/${ADMIN_USER}/.bash_profile <<'EOF'
+# pyenv
+export PATH="$HOME/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+EOF
+source /home/${ADMIN_USER}/.bash_profile
+pyenv install ${PYTHON_VER}
+pyenv global ${PYTHON_VER}
+#sudo yum install -y python3-devel python3-libs python3-setuptools python3-pip
+#sudo yum install -y httpd-devel
+#sudo pip3 install mod_wsgi
+#MOD_WSGI_PATH=`find /usr/local/ -type f -name "mod_wsgi*.so"`
+#sudo cat >> /etc/httpd/conf.d/virtualhost.conf <<EOF
+#LoadModule wsgi_module ${MOD_WSGI_PATH}
+#<VirtualHost *:80>
+#  ServerName ${SERVICE_DOMAIN}
+#  DocumentRoot /var/www/sites/${SERVICE_DOMAIN}
+#  WSGIScriptAlias / /var/www/sites/${SERVICE_DOMAIN}/adapter.wsgi
+#  <Directory "/var/www/sites/${SERVICE_DOMAIN}/">
+#    Order deny,allow
+#    Allow from all
+#  </Directory>
+#</VirtualHost>
+#EOF
+
+## Install k6 (Performance test tool)
+sudo dnf install -y https://dl.k6.io/rpm/repo.rpm
+sudo dnf install -y k6
+
+### Install php
+#sudo amazon-linux-extras enable php7.4
+#sudo amazon-linux-extras install -y php7.4
+#sudo yum install -y ImageMagick ImageMagick-devel
+#sudo yum install -y php php-mysqlnd php-devel php-gd php-opcache php-mbstring php-pdo
+##sudo yum install -y php-pear php-pecl-imagick
+#sudo cat > /etc/php.d/my.ini <<EOF
+#short_open_tag = Off
+#expose_php = Off
+#memory_limit = 128M
+#post_max_size = 20M
+#upload_max_filesize = 20M
+#max_execution_time = 300
+#date.timezone = Asia/Tokyo
+#error_reporting = E_ALL & ~E_NOTICE
+#;error_log = "/var/log/php/php_errors.log" 
+#[mbstring]
+#mbstring.language = Japanese
+#mbstring.internal_encoding = utf-8
+#EOF
+
+## restart httpd ##
+sudo systemctl restart httpd

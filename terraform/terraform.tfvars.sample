@@ -1,0 +1,46 @@
+# General
+prj_prefix  = "your-project-prd" # set with environment name
+environment = "prd" # prd / dev
+
+region_api         = "ap-northeast-1"
+region_site        = "ap-northeast-1"
+region_acm         = "us-east-1"
+region_lambda_edge = "us-east-1"
+
+route53_zone_id              = "Set your route53 zone id"
+domain_api                   = "your-domain-api.example.com"
+domain_static_site           = "your-domain.example.com"
+s3_static_site_force_destroy = true
+
+# VPC
+# vpc_availability_zones = ["ap-northeast-1c", "ap-northeast-1d"]
+
+# EC2
+key_name                   = "your-ssh-keypair-name"
+key_file_path              = "~/.ssh/your-ssh-key-file-name"
+security_ssh_ingress_cidrs = ["0.0.0.0/0"] # Set by Array type
+ec2_instance_type          = "t2.micro"
+ec2_root_block_volume_type = "gp3" # gp3 / gp2 / io1 / standard
+ec2_root_block_volume_size = "30" #GB
+#ec2_ami_type               = "amazon_linux_2023" # Type of AMI to use (amazon_linux_2 or amazon_linux_2023)
+ec2_ami_id                 = "" # Set this if you deployed onece
+#ec2_ebs_block_volume_type  = "gp2" # gp2 / io1 / standard
+#ec2_ebs_block_volume_size  = "50"
+
+# RDS
+#aws_db_instance_count = 2
+aws_db_instance_type = "db.t3.micro"
+#aws_db_block_volume_type = "gp2" # gp2 / io1 / standard
+#aws_db_allocated_storage = "20"  # GB
+aws_db_engine            = "mysql"
+aws_db_engine_version    = "8.0.41"
+#aws_db_engine_version = "8.0.mysql_aurora.3.04.1"
+aws_db_backup_retention_period = 1 # days | For production, set 7 or more
+aws_db_deletion_protection     = false # For production, set true
+aws_db_port              = "3306"
+#aws_db_name              = "" # Set this, if create db
+aws_db_username          = "set-db_admin"
+aws_db_password          = "set-db_password"
+
+# APP Deploy
+app_is_enabled = 1

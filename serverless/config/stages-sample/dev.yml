@@ -1,0 +1,49 @@
+domainName: your-project-api-dev.example.com
+corsAcceptOrigins: ""
+notificationEmail: admin-dev@example.com
+
+logLevel: INFO
+logRetentionInDays: 1
+logsRestApi:
+  accessLogging: true # Optional configuration which enables or disables access logging. Defaults to true.
+  executionLogging: true # Optional configuration which enables or disables execution logging. Defaults to true.
+  level: INFO # Optional configuration which specifies the log level to use for execution logging. May be set to either INFO or ERROR.
+  fullExecutionData: true # Optional configuration which specifies whether or not to log full requests/responses for execution logging. Defaults to true.
+
+associateWafName: your-waf-name # If need to use WAF, set existing name of WebACL. If set not existing name, ignore this.
+
+appConf:
+  memorySize: 128 # MB
+  timeout: 29 # s
+  lambdaInsights: true
+  provisionedConcurrency: 0
+
+vpc:
+  vpcId: vpc-xxxxxxxxxxxxxxxxx
+  securityGroupIdsPublic:
+    - sg-xxxxxxxxxxxxxxxxx
+  securityGroupIdsPrivateLambda:
+    - sg-xxxxxxxxxxxxxxxxx
+  subnetIdsPublic:
+    - subnet-xxxxxxxxxxxxxxxxx
+    - subnet-xxxxxxxxxxxxxxxxx
+  subnetIdsPrivateLambda:
+    - subnet-xxxxxxxxxxxxxxxxx
+  routeTableIdsPublic:
+    - rtb-xxxxxxxxxxxxxxxxx
+
+db:
+  port: 3306
+  host: your-rds-endpoint.rds.amazonaws.com
+  user: your-user-name
+  password: your-password
+  name: your-dbname
+  connectionPoolRecycleTime: 200
+
+dbBackup:
+  architecture: arm64 # Allowed: x86_64, arm64
+  settings:
+    memorySize: 512 # MB
+    timeout: 900 # s
+  fileCount: 5
+  schedule: cron(0 20 * * ? *) # Execute every day at 20:00 UTC -> 05:00 JST

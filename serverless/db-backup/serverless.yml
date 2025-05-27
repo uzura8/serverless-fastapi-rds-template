@@ -1,0 +1,101 @@
+service: ${file(../config/stages/common.yml):service}-db-backup
+# サービス名は serverside/serverless.yml の service と同じにしない(同じにすると設置済みの Lambda が消える)
+
+frameworkVersion: "4"
+
+custom:
+  defaultStage: local
+  prjPrefix: ${self:service}-${self:provider.stage}
+  stageConfigFileName: ../config/stages/${self:provider.stage}.yml
+
+provider:
+  name: aws
+  architecture: arm64 # For macOS M1
+  runtime: python3.10
+  stage: ${opt:stage, self:custom.defaultStage}
+  region: ${file(../config/stages/common.yml):defaultRegion}
+  endpointType: REGIONAL
+  stackTags:
+    deployedBy: serverless-${self:service}
+    projectName: ${self:custom.prjPrefix}
+  iam:
+    role:
+      # statements: ${file(../config/iam-role-statements.yml)}
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:ListBucket
+          Resource:
+            - arn:aws:s3:::${self:provider.environment.DEPLOYMENT_BUCKET_NAME}
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+          Resource:
+            - arn:aws:s3:::${self:provider.environment.DEPLOYMENT_BUCKET_NAME}/rds-backup/*
+        - Effect: Allow
+          Action:
+            - s3:DeleteObject
+          Resource:
+            - arn:aws:s3:::${self:provider.environment.DEPLOYMENT_BUCKET_NAME}/rds-backup/${self:provider.environment.PRJ_PREFIX}/*
+        # ECR リポジトリ参照用の権限
+        - Effect: Allow
+          Action:
+            - ecr:BatchCheckLayerAvailability
+            - ecr:BatchGetImage
+            - ecr:GetDownloadUrlForLayer
+          Resource:
+            - arn:aws:ecr:${self:provider.region}:${aws:accountId}:repository/serverless-${self:service}-${self:provider.stage}
+  deploymentBucket:
+    name: ${file(../config/stages/common.yml):deploymentBucketName}
+    serverSideEncryption: AES256
+  ecr:
+    images:
+      db_backup_image:
+        path: docker # Dockerfile のあるフォルダ
+  environment:
+    PRJ_PREFIX: ${self:custom.prjPrefix}
+    DB_HOST: ${file(${self:custom.stageConfigFileName}):db.host}
+    DB_PORT: ${file(${self:custom.stageConfigFileName}):db.port}
+    DB_USER: ${file(${self:custom.stageConfigFileName}):db.user}
+    DB_PASSWORD: ${file(${self:custom.stageConfigFileName}):db.password}
+    DB_NAME: ${file(${self:custom.stageConfigFileName}):db.name}
+    #DB_CONN_POOL_RECYCLE_TIME: ${file(${self:custom.stageConfigFileName}):db.connectionPoolRecycleTime}
+    DEPLOYMENT_BUCKET_NAME: ${file(../config/stages/common.yml):deploymentBucketName}
+    BACKUP_FILE_COUNT: ${file(${self:custom.stageConfigFileName}):dbBackup.fileCount}
+
+package:
+  patterns:
+    - "!LICENSE"
+    - "!README.md"
+    - "!node_modules/**"
+    - "!config/stages-sample/**"
+    - "!**/config-bkup_*"
+    - "!.venv/**"
+    - "!_old/**"
+    - "!**/__pycache__"
+    - "!package-lock.json"
+    - "!requirements-dev.txt"
+    - "!.babelrc"
+    - "!.browserslistrc"
+    - "!.eslintrc.js"
+    - "!.dynamodb/**"
+    - "!.prettierrc.json"
+    - "!.gitignore"
+    - "!**/tags"
+    - "!**/.DS_Store"
+    - "!develop/**"
+    - "!var/**"
+    - "!app/bin/**"
+
+functions:
+  dbBackup:
+    name: ${self:service}-${self:provider.stage}-db-backup
+    image:
+      name: db_backup_image # provider.ecr.images のキーを参照
+    timeout: ${file(${self:custom.stageConfigFileName}):dbBackup.settings.timeout}
+    memorySize: ${file(${self:custom.stageConfigFileName}):dbBackup.settings.memorySize}
+    vpc:
+      securityGroupIds: ${file(${self:custom.stageConfigFileName}):vpc.securityGroupIdsPrivateLambda}
+      subnetIds: ${file(${self:custom.stageConfigFileName}):vpc.subnetIdsPrivateLambda}
+    events:
+      - schedule: ${file(${self:custom.stageConfigFileName}):dbBackup.schedule}

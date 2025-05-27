@@ -1,0 +1,174 @@
+## "org" ensures this Service is used with the correct Serverless Framework Access Key.
+#org: palrelations
+## "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+#app: sample-app
+## "service" is the name of this project. This will also be added to your AWS resource names.
+service: ${file(./config/stages/common.yml):service}
+
+frameworkVersion: "4"
+
+plugins:
+  - serverless-python-requirements
+  - serverless-deployment-bucket
+  - serverless-prune-plugin
+  - serverless-domain-manager
+  - serverless-api-gateway-throttling
+  #- serverless-plugin-lambda-insights
+  #- serverless-plugin-aws-alerts
+  - serverless-associate-waf
+
+#stages:
+#  default:
+#    params:
+#      tableName: "users-table-${sls:stage}"
+
+custom:
+  defaultStage: dev
+  prjPrefix: ${self:service}-${self:provider.stage}
+  stageConfigFileName: ./config/stages/${self:provider.stage}.yml
+  awsAccontId: ${file(./config/stages/common.yml):awsAccountId}
+
+  deploymentBucket:
+    versioning: true
+    accelerate: true
+    blockPublicAccess: true
+
+  pythonRequirements:
+    dockerizePip: true
+    layer: true
+    slim: true
+    # Exclude the libraries that you want to exclude from the deployment package.
+    noDeploy:
+      - uvicorn
+      - python-dotenv
+
+  customDomain:
+    domainName: ${file(${self:custom.stageConfigFileName}):domainName}
+    stage: ${self:provider.stage}
+    basePath: ""
+    # basePath: "api"
+    certificateName: ${self:custom.customDomain.domainName}
+    createRoute53Record: true
+    endpointType: "regional"
+    securityPolicy: tls_1_2
+
+  prune:
+    automatic: true
+    number: 5
+
+  apiGatewayThrottling:
+    maxRequestsPerSecond: 100
+    maxConcurrentRequests: 50
+
+  associateWaf:
+    name: ${file(${self:custom.stageConfigFileName}):associateWafName}
+    version: V2 #(optional) Regional | V2
+
+provider:
+  name: aws
+  deploymentMethod: direct # https://www.serverless.com/framework/docs/providers/aws/guide/deploying#deployment-method
+  runtime: python3.13
+  stage: ${opt:stage, self:custom.defaultStage}
+  region: ${file(./config/stages/common.yml):defaultRegion}
+  endpointType: REGIONAL
+  stackTags:
+    deployedBy: ${self:custom.prjPrefix}
+    projectName: ${self:custom.prjPrefix}
+  iam:
+    role:
+      statements: ${file(./config/iam-role-statements.yml)}
+  deploymentBucket:
+    name: ${file(./config/stages/common.yml):deploymentBucketName}
+    serverSideEncryption: AES256
+  logs:
+    restApi:
+      accessLogging: ${file(${self:custom.stageConfigFileName}):logsRestApi.accessLogging}
+      executionLogging: ${file(${self:custom.stageConfigFileName}):logsRestApi.executionLogging}
+      level: ${file(${self:custom.stageConfigFileName}):logsRestApi.level}
+      fullExecutionData: ${file(${self:custom.stageConfigFileName}):logsRestApi.fullExecutionData}
+  logRetentionInDays: ${file(${self:custom.stageConfigFileName}):logRetentionInDays}
+
+  environment:
+    PRJ_PREFIX: ${self:custom.prjPrefix}
+    APP_ROOT: /${self:custom.customDomain.basePath}
+    CORS_ACCEPT_ORIGINS: ${file(${self:custom.stageConfigFileName}):corsAcceptOrigins}
+    LOG_LEVEL: ${file(${self:custom.stageConfigFileName}):logLevel}
+
+package:
+  individually: true
+  patterns:
+    - "!**/.env"
+    - "!**/tests/**"
+    - "!node_modules/**"
+    - "!config/stages-sample/**"
+    - "!**/config-bkup_*"
+    - "!.venv/**"
+    - "!_old/**"
+    - "!**/__pycache__"
+    - "!package-lock.json"
+    - "!requirements-dev.txt"
+    - "!.dynamodb/**"
+    - "!**/tags"
+    - "!**/.DS_Store"
+    - "!develop/**"
+    - "!app/bin/**"
+
+functions:
+  api:
+    #handler: app/main
+    handler: app.main.handler
+    name: ${self:service}-${self:provider.stage}-api
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    memorySize: ${file(${self:custom.stageConfigFileName}):appConf.memorySize}
+    timeout: ${file(${self:custom.stageConfigFileName}):appConf.timeout}
+    provisionedConcurrency: ${file(${self:custom.stageConfigFileName}):appConf.provisionedConcurrency}
+    #events:
+    #  - httpApi: '*'
+    events:
+      - http:
+          path: /
+          method: ANY
+      - http:
+          path: /{proxy+}
+          method: ANY
+    vpc:
+      securityGroupIds: ${file(${self:custom.stageConfigFileName}):vpc.securityGroupIdsPublic}
+      subnetIds: ${file(${self:custom.stageConfigFileName}):vpc.subnetIdsPublic}
+  #api:
+  #  handler: wsgi_handler.handler
+  #  events:
+  #    - http:
+  #        path: /
+  #        method: ANY
+  #    - http:
+  #        path: /{proxy+}
+  #        method: ANY
+
+resources:
+  Resources:
+    S3VpcEndpoint:
+      Type: "AWS::EC2::VPCEndpoint"
+      Properties:
+        ServiceName:
+          Fn::Join:
+            - ""
+            - - "com.amazonaws."
+              - Ref: "AWS::Region"
+              - ".s3"
+        VpcId: ${file(${self:custom.stageConfigFileName}):vpc.vpcId}
+        RouteTableIds: ${file(${self:custom.stageConfigFileName}):vpc.routeTableIdsPublic}
+
+#    UsersTable:
+#      Type: AWS::DynamoDB::Table
+#      Properties:
+#        AttributeDefinitions:
+#          - AttributeName: userId
+#            AttributeType: S
+#        KeySchema:
+#          - AttributeName: userId
+#            KeyType: HASH
+#        ProvisionedThroughput:
+#          ReadCapacityUnits: 1
+#          WriteCapacityUnits: 1
+#        TableName: ${param:tableName}
