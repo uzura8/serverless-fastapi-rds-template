@@ -3,7 +3,7 @@
 Constructed by
 
 - ServerSide:
-  - Python/FastApi on Lambda + APIGateway
+  - Python/FastAPI on Lambda + APIGateway
   - Deploy by Terraform and Serverless Framework ver4
 
 ## Instration
@@ -131,7 +131,7 @@ export AWS_SDK_LOAD_CONFIG=1
 export AWS_PROFILE="your-profile-name"
 export AWS_REGION="ap-northeast-1"
 
-npx sls deploy --verbose --stage target-env
+npx sls deploy --stage target-env --verbose
 ```
 
 ## Deploy Frontend Resources
@@ -171,6 +171,32 @@ vi src/config/config.json
 
 #### Deploy continually on pushed to git
 
+## DB Backup by MySQL Dump on Lambda
+
+Prepare
+
+```bash
+cd (project_root/)serverless
+aws-vault exec your-aws-role-for-deploy
+. .venv/bin/activate
+```
+
+Edit config file
+
+```bash
+vi config/stages/Target-stage.yml
+# Edit item for dbBackup
+```
+
+```bash
+cd (project_root/)serverless/
+cd db-backup/ # It's important to run this command in the db-backup directory
+```
+
+```bash
+npx sls deploy --stage Target-stage --verbose
+```
+
 ## Development
 
 ### Local Development
@@ -185,13 +211,13 @@ pip install pylint
 
 ### Work on local
 
-#### Flask on local
+#### WEB App on local
 
 Build Docker container and start
 
 ```bash
 cd (project_root/)serverless
-npx uvicorn app.main:app --reload
+uvicorn app.main:app --reload
 ```
 
 Request [http://127.0.0.1:8000](http://127.0.0.1:8000)
@@ -205,11 +231,19 @@ npx sls invoke local --function funcName --data param
 
 ## Destroy Resources
 
+If you deployed dbBackup function, execute below command
+
+```bash
+cd (project_root/)serverless/
+cd db-backup/ # It's important to run this command in the db-backup directory
+npx sls remove --stage Target-stage --verbose
+```
+
 Destroy for serverless resources
 
 ```bash
 cd (project_root/)serverless
-npx sls remove --stage Target-stage
+npx sls remove --stage Target-stage --verbose
 npx sls delete_domain --stage Target-stage
 ```
 
