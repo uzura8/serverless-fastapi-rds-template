@@ -1,6 +1,6 @@
 # import pkgutil
 # import importlib
-from app.api.main import api_router
+from app.api import router
 from app.core.config import settings
 from app.exceptions import init_exception_handler
 from app.log import init_log
@@ -24,6 +24,6 @@ init_middlewares(app)
 #    module = importlib.import_module(f'app.routes.{module_name}')
 #    # 各モジュールで `router: APIRouter` を定義しておくこと
 #    app.include_router(module.router)
-app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(router, prefix=settings.API_V1_STR)
 
 handler = Mangum(app)
