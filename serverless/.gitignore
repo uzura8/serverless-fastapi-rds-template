@@ -22,8 +22,14 @@ coverage
 # Python
 .venv
 .python-version
+.cache
+.coverage
 __pycache__
 requirements-tmp*
+app.egg-info
+*.pyc
+.mypy_cache
+htmlcov
 
 # serverless
 .serverless

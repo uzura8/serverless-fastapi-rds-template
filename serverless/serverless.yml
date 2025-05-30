@@ -93,6 +93,11 @@ provider:
     APP_ROOT: /${self:custom.customDomain.basePath}
     CORS_ACCEPT_ORIGINS: ${file(${self:custom.stageConfigFileName}):corsAcceptOrigins}
     LOG_LEVEL: ${file(${self:custom.stageConfigFileName}):logLevel}
+    MYSQL_HOST: ${file(${self:custom.stageConfigFileName}):db.host}
+    MYSQL_PORT: ${file(${self:custom.stageConfigFileName}):db.port}
+    MYSQL_USER: ${file(${self:custom.stageConfigFileName}):db.user}
+    MYSQL_PASSWORD: ${file(${self:custom.stageConfigFileName}):db.password}
+    MYSQL_DBNAME: ${file(${self:custom.stageConfigFileName}):db.name}
 
 package:
   individually: true

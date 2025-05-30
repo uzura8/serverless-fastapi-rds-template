@@ -1,20 +1,21 @@
 # import pkgutil
 # import importlib
+from app.api.main import api_router
+from app.core.config import settings
+from app.exceptions import init_exception_handler
+from app.log import init_log
+from app.middlewares import init_middlewares
 from fastapi import FastAPI
 from mangum import Mangum
 
-from app.routes import items
+app = FastAPI(title="FastAPI Sample")
+# app = FastAPI(
+#     title='MyWallets API', lifespan=lifespan
+# )
 
-app = FastAPI()
-
-# @app.get('/')
-# def read_root():
-#    return {'Hello': 'World'}
-#
-#
-# @app.get('/items/{item_id}')
-# def read_item(item_id: int, q: str = None):
-#    return {'item_id': item_id, 'q': q}
+init_log()
+init_exception_handler(app)
+init_middlewares(app)
 
 # routes ディレクトリ内のモジュールを全て読み込んで router を登録する
 # import app.routes as routes_pkg
@@ -23,8 +24,6 @@ app = FastAPI()
 #    module = importlib.import_module(f'app.routes.{module_name}')
 #    # 各モジュールで `router: APIRouter` を定義しておくこと
 #    app.include_router(module.router)
-
-app.include_router(items.router)
-# app.include_router(root.router)
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 handler = Mangum(app)
