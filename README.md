@@ -213,6 +213,13 @@ pip install pylint
 
 ### Work on local
 
+#### Prepare Local Environment
+
+```bash
+cp .env.sample .env
+vi .env
+```
+
 #### WEB App on local
 
 Build Docker container and start

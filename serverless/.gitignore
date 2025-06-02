@@ -40,7 +40,6 @@ htmlcov
 /config/stages/*
 /config/templates/*
 
-/develop/env.sh
 /develop/var/*
 /develop/fixtures/*
 /develop/memo.txt
