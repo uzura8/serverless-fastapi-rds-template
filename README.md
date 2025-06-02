@@ -47,9 +47,11 @@ npm install
 Install python packages
 
 ```bash
-. .venv/bin/activate
-pip install -r requirements.txt
+poetry shell
 ```
+
+You need to install Poetry to manage python packages.
+Refer to [Poetry Installation](https://python-poetry.org/docs/#installation) for more details.
 
 ## Deploy AWS Resources by Terraform
 
@@ -58,7 +60,7 @@ pip install -r requirements.txt
 Create S3 Buckets like below in ap-northeast-1 region
 
 - **your-serverless-deployment**
-  - Store deployment state files by terraformand and serverless framework
+  - Store deployment state files by terraform and serverless framework
   - Create directory "terraform/your-project-name"
 - **your-serverless-configs**
   - Store config files for app
