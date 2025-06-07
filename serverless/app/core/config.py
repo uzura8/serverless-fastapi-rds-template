@@ -11,19 +11,22 @@ class Settings(BaseSettings):
     #     env_ignore_empty=True,
     #     extra="ignore",
     # )
-    API_V1_STR: str = "/api/v1"
+    API_V1_STR: str = '/api/v1'
 
     MYSQL_HOST: str
     MYSQL_PORT: int = 3306
     MYSQL_USER: str
-    MYSQL_PASSWORD: str = ""
-    MYSQL_DBNAME: str = ""
+    MYSQL_PASSWORD: str = ''
+    MYSQL_DBNAME: str = ''
+
+    ENABLE_SQL_LOG: bool = False
+    TABLE_TO_CHECK_DB_EXIST: str = 'tasks'
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> MySQLDsn:
         return MultiHostUrl.build(
-            scheme="mysql+aiomysql",
+            scheme='mysql+aiomysql',
             username=self.MYSQL_USER,
             password=self.MYSQL_PASSWORD,
             host=self.MYSQL_HOST,
@@ -32,4 +35,4 @@ class Settings(BaseSettings):
         )
 
 
-settings = Settings()  # type: ignore
+settings = Settings()

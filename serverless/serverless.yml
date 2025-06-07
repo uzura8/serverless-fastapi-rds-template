@@ -34,13 +34,14 @@ custom:
     blockPublicAccess: true
 
   pythonRequirements:
-    dockerizePip: true
-    layer: true
-    slim: true
-    # Exclude the libraries that you want to exclude from the deployment package.
-    noDeploy:
-      - uvicorn
-      - python-dotenv
+    usePoetry: true #  Set true to use Poetry for dependency management
+    dockerizePip: true # （optional）Build binaries in a Docker container to ensure compatibility with AWS Lambda
+    layer: true # （optional）Create a Lambda Layer for the dependencies
+    strip: true # (optional) Strip debug symbols from the dependencies to reduce size
+    slim: true # （optional）Slim down the dependencies to reduce size
+    # noDeploy: # not required on using Poetry
+    #   - uvicorn
+    #   - python-dotenv
 
   customDomain:
     domainName: ${file(${self:custom.stageConfigFileName}):domainName}
@@ -163,7 +164,6 @@ resources:
               - ".s3"
         VpcId: ${file(${self:custom.stageConfigFileName}):vpc.vpcId}
         RouteTableIds: ${file(${self:custom.stageConfigFileName}):vpc.routeTableIdsPublic}
-
 #    UsersTable:
 #      Type: AWS::DynamoDB::Table
 #      Properties:

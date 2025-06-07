@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class LoggingRoute(APIRoute):
+
     def get_route_handler(self):
         original = super().get_route_handler()
 
@@ -27,7 +28,8 @@ class LoggingRoute(APIRoute):
                 res = json.loads(response.body.decode())
             except Exception:
                 res = ""
-            logger.info("dump res: %s %s %s: %s", status_code, method, url, res)
+            logger.info("dump res: %s %s %s: %s",
+                        status_code, method, url, res)
             return response
 
         return custom_route_handler

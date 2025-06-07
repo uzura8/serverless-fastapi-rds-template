@@ -1,8 +1,5 @@
-from pydantic import BaseModel
+from .base import BaseSchema
 
 
-class DoneResponse(BaseModel):
+class Done(BaseSchema):
     id: int
-
-    class Config:
-        orm_mode = True

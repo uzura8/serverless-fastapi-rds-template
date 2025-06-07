@@ -1,52 +1,100 @@
-from typing import List
-
-import app.cruds.task as task_crud
-import app.schemas.task as task_schema
+from typing import Annotated
+from fastapi import APIRouter, Depends, status
+from app.routes import LoggingRoute
+from app.schemas.task import Task
+from .schemas import (
+    GetTasksResponse,
+    GetTaskResponse,
+    PostTaskRequest,
+    PostTaskResponse,
+    PutTaskRequest,
+    PutTaskResponse
+)
+from .use_case import (
+    ListTasks,
+    GetTask,
+    CreateTask,
+    UpdateTask,
+    DeleteTask
+)
 from .done.views import (
     router as done_router,
 )
-from app.db import get_db
-from app.routes import LoggingRoute
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
-router = APIRouter(prefix="/tasks", route_class=LoggingRoute)
+router = APIRouter(prefix='/tasks', route_class=LoggingRoute)
 
 
-@router.get("", response_model=List[task_schema.Task])
-async def list_tasks(db: AsyncSession = Depends(get_db)):
-    return await task_crud.get_tasks_with_done(db)
+@router.get('', response_model=GetTasksResponse)
+async def get_tasks(
+    use_case: Annotated[
+        ListTasks, Depends(ListTasks)
+    ]
+) -> GetTasksResponse:
+    return GetTasksResponse(
+        tasks=[Task.model_validate(t)
+               for t in await use_case.execute()]
+    )
 
 
-@router.post("", response_model=task_schema.TaskCreateResponse)
+@router.get('/{task_id}', response_model=GetTaskResponse)
+async def get_task(
+    task_id: int,
+    use_case: Annotated[
+        GetTask, Depends(GetTask)
+    ],
+) -> GetTaskResponse:
+    result = await use_case.execute(
+        task_id=task_id
+    )
+    return GetTaskResponse.model_validate(result)
+
+
+@router.post('', response_model=PostTaskResponse)
 async def create_task(
-    task_body: task_schema.TaskCreate,
-    db: AsyncSession = Depends(get_db)
-):
-    return await task_crud.create_task(db, task_body)
+    data: PostTaskRequest,
+    use_case: Annotated[
+        CreateTask, Depends(CreateTask)
+    ],
+) -> PostTaskResponse:
+    saved = await use_case.execute(data)
+    result = {
+        'id': saved.id,
+        'title': saved.title,
+        'done': saved.done is not None,
+    }
+    return PostTaskResponse.model_validate(result)
 
 
-@router.put("/{task_id}", response_model=task_schema.TaskCreateResponse)
+@router.put('/{task_id}', response_model=PutTaskResponse)
 async def update_task(
     task_id: int,
-    task_body: task_schema.TaskCreate,
-    db: AsyncSession = Depends(get_db)
-):
-    task = await task_crud.get_task(db, task_id=task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
+    data: PutTaskRequest,
+    use_case: Annotated[
+        UpdateTask, Depends(UpdateTask)
+    ],
+) -> PutTaskResponse:
+    saved = await use_case.execute(task_id, data)
+    result = {
+        'id': saved.id,
+        'title': saved.title,
+        'done': saved.done is not None,
+    }
+    return PostTaskResponse.model_validate(result)
 
-    return await task_crud.update_task(db, task_body, original=task)
 
-
-@router.delete("/{task_id}", response_model=None)
-async def delete_task(task_id: int, db: AsyncSession = Depends(get_db)):
-    task = await task_crud.get_task(db, task_id=task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    return await task_crud.delete_task(db, original=task)
+@router.delete(
+    '/{task_id}',
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_task(
+    task_id: int,
+    use_case: Annotated[
+        DeleteTask, Depends(DeleteTask)
+    ],
+) -> None:
+    await use_case.execute(task_id=task_id)
 
 router.include_router(
-    done_router, prefix="/{task_id}"
+    done_router, prefix='/{task_id}'
 )

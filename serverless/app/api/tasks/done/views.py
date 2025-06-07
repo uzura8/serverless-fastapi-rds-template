@@ -1,34 +1,40 @@
-import app.cruds.done as done_crud
-import app.schemas.done as done_schema
-from app.db import get_db
 from app.routes import LoggingRoute
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Annotated
+from fastapi import APIRouter, Depends, status
+from .schemas import PutDoneResponse
+from .use_case import (
+    UpdateDone,
+    DeleteDone
+)
 
 router = APIRouter(
-    prefix="/done", route_class=LoggingRoute
+    prefix='/done', route_class=LoggingRoute
 )
 
 
-@router.put("", response_model=done_schema.DoneResponse)
+@router.put('', response_model=PutDoneResponse)
 async def mark_task_as_done(
     task_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    done = await done_crud.get_done(db, task_id=task_id)
-    if done is not None:
-        raise HTTPException(status_code=400, detail="Done already exists")
+    use_case: Annotated[
+        UpdateDone, Depends(UpdateDone)
+    ],
+) -> PutDoneResponse:
+    return PutDoneResponse.model_validate(
+        await use_case.execute(task_id=task_id)
+    )
 
-    return await done_crud.create_done(db, task_id)
 
-
-@router.delete("", response_model=None)
+@router.delete(
+    '',
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT
+)
 async def unmark_task_as_done(
-    task_id: int, db:
-    AsyncSession = Depends(get_db)
-):
-    done = await done_crud.get_done(db, task_id=task_id)
-    if done is None:
-        raise HTTPException(status_code=404, detail="Done not found")
-
-    return await done_crud.delete_done(db, original=done)
+    task_id: int,
+    use_case: Annotated[
+        DeleteDone, Depends(DeleteDone)
+    ],
+) -> None:
+    return PutDoneResponse.model_validate(
+        await use_case.execute(task_id=task_id)
+    )
