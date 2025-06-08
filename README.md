@@ -34,6 +34,23 @@ tfenv install 1.11.
 tfenv use 1.11.3
 ```
 
+#### Install Poetry
+
+Install Poetry for python package management
+
+```bash
+curl -sSL https://install.python-poetry.org | python -
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+poetry --version
+```
+
+Install poetry-plugin-export plugin
+
+```bash
+poetry self add poetry-plugin-export
+```
+
 ### Install Packages
 
 Install npm packages
