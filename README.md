@@ -48,6 +48,7 @@ Install python packages
 
 ```bash
 poetry shell
+. .venv/bin/activate
 ```
 
 You need to install Poetry to manage python packages.
@@ -208,7 +209,7 @@ Install packages for development
 ```bash
 cd (project_root/)serverless
 . .venv/bin/activate
-pip install pylint
+poetry install --only dev
 ```
 
 ### Work on local
@@ -216,8 +217,16 @@ pip install pylint
 #### Prepare Local Environment
 
 ```bash
-cp .env.sample .env
-vi .env
+cd (project_root/)serverless
+cp develop/env.sh.sample develop/env.sh
+vi develop/env.sh
+# Edit variables for your local environment
+```
+
+Apply environment variables
+
+```bash
+source develop/env.sh
 ```
 
 #### WEB App on local
@@ -230,12 +239,20 @@ uvicorn app.main:app --reload
 ```
 
 Request [http://127.0.0.1:8000](http://127.0.0.1:8000)
+API document is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 #### Execute Script
 
 ```bash
 cd (project_root/)serverless
 npx sls invoke local --function funcName --data param
+```
+
+### Test
+
+```bash
+cd (project_root/)serverless
+poetry run pytest
 ```
 
 ## Destroy Resources

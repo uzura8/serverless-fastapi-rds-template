@@ -4,7 +4,10 @@ from .base import BaseSchema
 
 
 class TaskBase(BaseSchema):
-    title: Optional[str] = Field(None, example='クリーニングを取りに行く')
+    title: Optional[str] = Field(
+        default=None,
+        json_schema_extra={'example': 'クリーニングを取りに行く'}
+    )
 
 
 class Task(TaskBase):
