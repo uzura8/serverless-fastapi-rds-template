@@ -35,6 +35,4 @@ async def unmark_task_as_done(
         DeleteDone, Depends(DeleteDone)
     ],
 ) -> None:
-    return PutDoneResponse.model_validate(
-        await use_case.execute(task_id=task_id)
-    )
+    await use_case.execute(task_id=task_id)

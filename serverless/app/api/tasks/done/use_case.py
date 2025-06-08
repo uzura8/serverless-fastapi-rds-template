@@ -32,4 +32,4 @@ class DeleteDone:
         done = await self.repo.get(task_id)
         if done is None:
             raise NotFound('done', task_id)
-        return await self.repo.delete(task_id)
+        await self.repo.delete(task_id)
