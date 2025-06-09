@@ -30,8 +30,8 @@ ec2_ami_id                 = "" # Set this if you deployed onece
 # RDS
 #aws_db_instance_count = 2
 aws_db_instance_type = "db.t3.micro"
-#aws_db_block_volume_type = "gp2" # gp2 / io1 / standard
-#aws_db_allocated_storage = "20"  # GB
+aws_db_block_volume_type = "gp3" # gp2 / io1 / standard
+aws_db_allocated_storage = "30"  # GB
 aws_db_engine            = "mysql"
 aws_db_engine_version    = "8.0.41"
 #aws_db_engine_version = "8.0.mysql_aurora.3.04.1"

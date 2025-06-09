@@ -14,21 +14,16 @@ You need below
 
 - common
   - aws-cli >= 2.22.X
-  - Terraform >= 1.11.3
+  - Terraform >= 1.12.X
 - serverless
   - nodeJS >= 22.14.X
   - Python >= 3.13.X
 
-#### Install tools
+#### Install Terraform
 
-Install serverless, python venv and terraform on mac
+Install terraform on mac
 
 ```bash
-# At project root dir
-cd (project_root/)serverless
-npm install
-python -m venv .venv
-
 brew install tfenv
 tfenv install 1.11.
 tfenv use 1.11.3
@@ -64,8 +59,9 @@ npm install
 Install python packages
 
 ```bash
-poetry shell
-. .venv/bin/activate
+# At project root dir
+cd (project_root/)serverless
+poetry install --without dev
 ```
 
 You need to install Poetry to manage python packages.
@@ -94,7 +90,33 @@ cp terraform.tfvars.sample terraform.tfvars
 vi terraform.tfvars
 ```
 
-#### 2. Set AWS profile name to environment variable
+#### 2. Edit remote setup script for EC2
+
+Copy sample file and edit variables for your env
+
+```bash
+cd (project_root_dir)/terraform
+cp bin/remote_setup_webapp.sh.sample bin/remote_setup_webapp.sh
+vi bin/remote_setup_webapp.sh
+```
+
+#### 3. Prepare Lambda@Edge for Viewer Request
+
+Copy sample file and edit variables for your env
+
+```bash
+cd (project_root_dir)/terraform
+cp functions/src/viewer_request/configs/config.js.sample functions/src/viewer_request/configs/config.js
+vi functions/src/viewer_request/configs/config.js
+```
+
+Execute below command to package Lambda@Edge function
+
+```bash
+sh bin/package_lambda_edge_function.sh
+```
+
+#### 4. Set AWS profile name to environment variable
 
 ```bash
 export AWS_SDK_LOAD_CONFIG=1
@@ -102,7 +124,7 @@ export AWS_PROFILE=your-aws-profile-name
 export AWS_REGION="ap-northeast-1"
 ```
 
-#### 3. Execute terraform init
+#### 5. Execute terraform init
 
 Command Example to init
 
@@ -110,7 +132,7 @@ Command Example to init
 terraform init -backend-config="bucket=your-deployment" -backend-config="key=terraform/your-project/terraform.tfstate" -backend-config="region=ap-northeast-1" -backend-config="profile=your-aws-profile-name"
 ```
 
-#### 4. Execute terraform apply
+#### 6. Execute terraform apply
 
 ```bash
 terraform apply
@@ -225,7 +247,6 @@ Install packages for development
 
 ```bash
 cd (project_root/)serverless
-. .venv/bin/activate
 poetry install --only dev
 ```
 
@@ -252,6 +273,7 @@ Build Docker container and start
 
 ```bash
 cd (project_root/)serverless
+poetry shell
 uvicorn app.main:app --reload
 ```
 

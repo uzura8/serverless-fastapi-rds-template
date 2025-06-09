@@ -17,7 +17,7 @@ variable "s3_static_site_force_destroy" {
 
 #variable "aws_db_instance_count" {}
 variable "aws_db_instance_type" {}
-#variable "aws_db_allocated_storage" {}
+variable "aws_db_allocated_storage" {}
 variable "aws_db_block_volume_type" {}
 variable "aws_db_engine" {}
 variable "aws_db_engine_version" {}
@@ -106,9 +106,9 @@ module "module_rds" {
   subnet_group_db_name             = module.module_vpc.subnet_group_db_name
   subnet_private_db_ids            = module.module_vpc.subnet_private_db_ids
   #db_instance_count                = var.aws_db_instance_count
-  db_instance_type = var.aws_db_instance_type
-  #db_allocated_storage = var.aws_db_allocated_storage
-  #db_block_volume_type       = var.aws_db_block_volume_type
+  db_instance_type           = var.aws_db_instance_type
+  db_allocated_storage       = var.aws_db_allocated_storage
+  db_block_volume_type       = var.aws_db_block_volume_type
   db_engine                  = var.aws_db_engine
   db_engine_version          = var.aws_db_engine_version
   db_backup_retention_period = var.aws_db_backup_retention_period

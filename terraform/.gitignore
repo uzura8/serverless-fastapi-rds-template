@@ -1,11 +1,12 @@
 # hidden files created by Windows
-/.terraform
-/.terraform.tfstate.lock.info
-/.terraform.lock.hcl
-/terraform.tfstate*
-/errored.tfstate*
-/terraform.json*
-/terraform.tfvars
+.terraform
+.terraform.tfstate.lock.info
+.terraform.lock.hcl
+terraform.tfstate*
+errored.tfstate*
+terraform.json*
+terraform.tfvars
+package-lock.json
 /var/*
 /bin/remote_setup_webapp.sh
 /functions/src/*/configs/config.js
