@@ -1,5 +1,5 @@
 from .base import BaseSchema
 
 
-class Done(BaseSchema):
+class DoneSchema(BaseSchema):
     id: int

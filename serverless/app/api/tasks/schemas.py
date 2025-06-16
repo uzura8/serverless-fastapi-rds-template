@@ -1,29 +1,29 @@
 from app.schemas.base import BaseSchema
 from app.schemas.task import (
-    Task,
-    TaskCreate,
+    TaskSchema,
+    TaskCreateSchema,
 )
 
 
 class GetTasksResponse(BaseSchema):
-    tasks: list[Task]
+    tasks: list[TaskSchema]
 
 
-class GetTaskResponse(Task):
+class GetTaskResponse(TaskSchema):
     pass
 
 
-class PostTaskRequest(TaskCreate):
+class PostTaskRequest(TaskCreateSchema):
     pass
 
 
-class PostTaskResponse(Task):
+class PostTaskResponse(TaskSchema):
     pass
 
 
-class PutTaskRequest(TaskCreate):
+class PutTaskRequest(TaskCreateSchema):
     pass
 
 
-class PutTaskResponse(Task):
+class PutTaskResponse(TaskSchema):
     pass

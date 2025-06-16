@@ -2,7 +2,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.exceptions import NotFound
-from app.schemas.task import Task
+from app.schemas.task import TaskSchema
 from app.repositories import TaskRepository
 
 
@@ -15,7 +15,7 @@ class ListTasks:
         self.session = session
         self.repo = repo
 
-    async def execute(self) -> list[Task]:
+    async def execute(self) -> list[TaskSchema]:
         return await self.repo.list_with_done()
 
 
@@ -28,7 +28,7 @@ class GetTask:
         self.session = session
         self.repo = repo
 
-    async def execute(self, task_id: int) -> Task:
+    async def execute(self, task_id: int) -> TaskSchema:
         task = await self.repo.get_with_done(task_id)
         if task is None:
             raise NotFound('task', task_id)
@@ -44,7 +44,7 @@ class CreateTask:
         self.session = session
         self.repo = repo
 
-    async def execute(self, data: Task) -> Task:
+    async def execute(self, data: TaskSchema) -> TaskSchema:
         return await self.repo.create(data)
 
 
@@ -57,7 +57,7 @@ class UpdateTask:
         self.session = session
         self.repo = repo
 
-    async def execute(self, task_id: int, data: Task) -> Task:
+    async def execute(self, task_id: int, data: TaskSchema) -> TaskSchema:
         saved = await self.repo.get(task_id)
         if saved is None:
             raise NotFound('task', task_id)

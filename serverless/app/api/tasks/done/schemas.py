@@ -1,9 +1,9 @@
-from app.schemas.done import Done
+from app.schemas.done import DoneSchema
 
 
-class PutDoneRequest(Done):
+class PutDoneRequest(DoneSchema):
     pass
 
 
-class PutDoneResponse(Done):
+class PutDoneResponse(DoneSchema):
     pass

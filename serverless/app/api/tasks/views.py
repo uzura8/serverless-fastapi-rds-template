@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from app.routes import LoggingRoute
-from app.schemas.task import Task
+from app.schemas.task import TaskSchema
 from .schemas import (
     GetTasksResponse,
     GetTaskResponse,
@@ -31,7 +31,7 @@ async def get_tasks(
     ]
 ) -> GetTasksResponse:
     return GetTasksResponse(
-        tasks=[Task.model_validate(t)
+        tasks=[TaskSchema.model_validate(t)
                for t in await use_case.execute()]
     )
 

@@ -1,4 +1,6 @@
-from .base import BaseORM
-from .task import TaskORM, DoneORM
+from __future__ import annotations
 
-__all__ = ["BaseORM", "TaskORM", "DoneORM"]
+from .base import BaseORM
+from .task import TaskModel, DoneModel
+
+__all__ = [BaseORM, TaskModel, DoneModel]
