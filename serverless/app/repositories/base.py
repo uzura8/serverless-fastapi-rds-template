@@ -98,9 +98,12 @@ class BaseRepository(Generic[ModelType, SchemaType]):
         return result.scalars().all()
 
     async def create(self, schema: SchemaType) -> ModelType:
-        """Create a new record."""
-        # new_record = self.model(**schema.model_dump())
-        new_record = self.model.from_entity(schema)
+        """
+        schema.model_dump() で dict を取り出し、
+        model のコンストラクタに展開する。
+        """
+        data = schema.model_dump(exclude_unset=True)  # or .dict()
+        new_record = self.model(**data)               # <- モデル層にスキーマ依存なし
         self.session.add(new_record)
         return await self.commit_and_refresh(new_record)
 
